@@ -64,7 +64,7 @@ def login_user(request):
 
 # Patient Service Endpoints
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def patients(request):
     if request.method == 'GET':
         data, status_code = proxy_request('patient_service', 'api/v1/patients/', 'GET', request.GET, request.user)
@@ -73,7 +73,7 @@ def patients(request):
     return Response(data, status=status_code)
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def patient_detail(request, patient_id):
     path = f'api/v1/patients/{patient_id}/'
     data, status_code = proxy_request('patient_service', path, request.method, request.data, request.user)
@@ -98,7 +98,7 @@ def doctor_detail(request, doctor_id):
 
 # Appointment Service Endpoints
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def appointments(request):
     if request.method == 'GET':
         data, status_code = proxy_request('appointment_service', 'api/v1/appointments/', 'GET', request.GET, request.user)
@@ -107,7 +107,7 @@ def appointments(request):
     return Response(data, status=status_code)
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def appointment_detail(request, appointment_id):
     path = f'api/v1/appointments/{appointment_id}/'
     data, status_code = proxy_request('appointment_service', path, request.method, request.data, request.user)
@@ -115,13 +115,13 @@ def appointment_detail(request, appointment_id):
 
 # Chatbot Service Endpoints
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def create_chat_session(request):
     data, status_code = proxy_request('chatbot_service', 'api/v1/chatbot/sessions/', 'POST', request.data, request.user)
     return Response(data, status=status_code)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def send_chat_message(request):
     data, status_code = proxy_request('chatbot_service', 'api/v1/chatbot/message/', 'POST', request.data, request.user)
     return Response(data, status=status_code)

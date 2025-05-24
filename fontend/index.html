@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý Bệnh viện</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏥 Hệ thống Quản lý Bệnh viện</h1>
+            <p>Nền tảng quản lý y tế hiện đại với kiến trúc microservices</p>
+        </div>
+
+        <!-- Navigation Pills -->
+        <div class="nav-pills">
+            <div class="nav-pill active" onclick="showPanel('login')">Đăng nhập</div>
+            <div class="nav-pill" onclick="showPanel('register')">Đăng ký</div>
+            <div class="nav-pill" onclick="showPanel('dashboard')" id="dashboardTab" style="display:none;">Dashboard</div>
+            <div class="nav-pill" onclick="showPanel('appointments')" id="appointmentsTab" style="display:none;">Quản lý lịch hẹn</div>
+            <div class="nav-pill" onclick="showPanel('book-appointment')" id="bookTab" style="display:none;">Đặt lịch hẹn</div>
+        </div>
+
+        <!-- Login Panel -->
+        <div id="login" class="content-panel active">
+            <h2>🔐 Đăng nhập</h2>
+            <div id="loginAlert"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginUsername">Tên đăng nhập</label>
+                    <input type="text" id="loginUsername" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Mật khẩu</label>
+                    <input type="password" id="loginPassword" class="form-control" required>
+                </div>
+                <button type="submit" class="btn">Đăng nhập</button>
+            </form>
+        </div>
+
+        <!-- Register Panel -->
+        <div id="register" class="content-panel">
+            <h2>📝 Đăng ký tài khoản</h2>
+            <div id="registerAlert"></div>
+            <form id="registerForm">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="username">Tên đăng nhập</label>
+                            <input type="text" id="username" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="password">Mật khẩu</label>
+                            <input type="password" id="password" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="password_confirm">Xác nhận mật khẩu</label>
+                            <input type="password" id="password_confirm" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="phone">Số điện thoại</label>
+                            <input type="tel" id="phone" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="role">Vai trò</label>
+                            <select id="role" class="form-control" required>
+                                <option value="">Chọn vai trò</option>
+                                <option value="patient">Bệnh nhân</option>
+                                <option value="doctor">Bác sĩ</option>
+                                <option value="nurse">Y tá</option>
+                                <option value="admin">Quản trị viên</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn">Đăng ký</button>
+            </form>
+        </div>
+
+        <!-- Dashboard Panel -->
+        <div id="dashboard" class="content-panel">
+            <div class="user-info" id="userInfo">
+                <h3>👋 Chào mừng!</h3>
+                <p>Đang tải thông tin người dùng...</p>
+            </div>
+            
+            <h2>📊 Thống kê tổng quan</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <h4>📅 Lịch hẹn hôm nay</h4>
+                        <div class="stat-number" id="todayAppointments">0</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <h4>⏳ Lịch hẹn sắp tới</h4>
+                        <div class="stat-number" id="upcomingAppointments">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-actions">
+                <button class="btn btn-success" onclick="showPanel('book-appointment')">Đặt lịch hẹn mới</button>
+                <button class="btn btn-secondary" onclick="showPanel('appointments')">Xem tất cả lịch hẹn</button>
+                <button class="btn btn-danger" onclick="logout()">Đăng xuất</button>
+            </div>
+        </div>
+
+        <!-- Book Appointment Panel -->
+        <div id="book-appointment" class="content-panel">
+            <h2>📅 Đặt lịch hẹn</h2>
+            <div id="bookAlert"></div>
+            <form id="bookAppointmentForm">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="doctorSelect">Chọn bác sĩ</label>
+                            <select id="doctorSelect" class="form-control" required>
+                                <option value="">Đang tải danh sách bác sĩ...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="appointmentDate">Ngày hẹn</label>
+                            <input type="date" id="appointmentDate" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="appointmentTime">Giờ hẹn</label>
+                            <select id="appointmentTime" class="form-control" required>
+                                <option value="">Chọn giờ</option>
+                                <option value="08:00">08:00</option>
+                                <option value="08:30">08:30</option>
+                                <option value="09:00">09:00</option>
+                                <option value="09:30">09:30</option>
+                                <option value="10:00">10:00</option>
+                                <option value="10:30">10:30</option>
+                                <option value="11:00">11:00</option>
+                                <option value="11:30">11:30</option>
+                                <option value="13:00">13:00</option>
+                                <option value="13:30">13:30</option>
+                                <option value="14:00">14:00</option>
+                                <option value="14:30">14:30</option>
+                                <option value="15:00">15:00</option>
+                                <option value="15:30">15:30</option>
+                                <option value="16:00">16:00</option>
+                                <option value="16:30">16:30</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="duration">Thời gian (phút)</label>
+                            <select id="duration" class="form-control" required>
+                                <option value="30">30 phút</option>
+                                <option value="45">45 phút</option>
+                                <option value="60">60 phút</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="reason">Lý do khám</label>
+                    <textarea id="reason" class="form-control" rows="3" placeholder="Mô tả triệu chứng hoặc lý do cần khám..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="notes">Ghi chú thêm</label>
+                    <textarea id="notes" class="form-control" rows="2" placeholder="Ghi chú thêm (không bắt buộc)..."></textarea>
+                </div>
+                <button type="submit" class="btn">Đặt lịch hẹn</button>
+            </form>
+        </div>
+
+        <!-- Appointments Panel -->
+        <div id="appointments" class="content-panel">
+            <h2>📋 Quản lý lịch hẹn</h2>
+            <div id="appointmentsAlert"></div>
+            
+            <div class="appointment-filters">
+                <button class="btn btn-secondary" onclick="filterAppointments('all')">Tất cả</button>
+                <button class="btn btn-secondary" onclick="filterAppointments('scheduled')">Đã lên lịch</button>
+                <button class="btn btn-secondary" onclick="filterAppointments('confirmed')">Đã xác nhận</button>
+                <button class="btn btn-secondary" onclick="filterAppointments('completed')">Hoàn thành</button>
+                <button class="btn btn-success" onclick="loadAppointments()">🔄 Làm mới</button>
+            </div>
+
+            <div id="appointmentsList" class="loading">
+                <div class="spinner"></div>
+                <p>Đang tải danh sách lịch hẹn...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

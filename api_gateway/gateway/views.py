@@ -63,7 +63,7 @@ def patient_detail(request, patient_id):
 
 # Doctor Service Endpoints
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])  # Tạm thời cho phép tất cả để test
 def doctors(request):
     if request.method == 'GET':
         data, status_code = proxy_request('doctor_service', 'api/v1/doctors/', 'GET', request.GET, request.user)
@@ -93,30 +93,3 @@ def create_chat_session(request):
 def send_chat_message(request):
     data, status_code = proxy_request('chatbot_service', 'api/v1/chatbot/message/', 'POST', request.data, request.user)
     return Response(data, status=status_code)
-
-# api_gateway/urls.py
-from django.contrib import admin
-from django.urls import path, include
-from . import views
-
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    
-    # User Service
-    path('api/v1/users/register/', views.register_user, name='register'),
-    path('api/v1/users/login/', views.login_user, name='login'),
-    
-    # Patient Service
-    path('api/v1/patients/', views.patients, name='patients'),
-    path('api/v1/patients/<int:patient_id>/', views.patient_detail, name='patient-detail'),
-    
-    # Doctor Service
-    path('api/v1/doctors/', views.doctors, name='doctors'),
-    
-    # Appointment Service
-    path('api/v1/appointments/', views.appointments, name='appointments'),
-    
-    # Chatbot Service
-    path('api/v1/chatbot/sessions/', views.create_chat_session, name='create-chat'),
-    path('api/v1/chatbot/message/', views.send_chat_message, name='send-message'),
-]

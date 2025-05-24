@@ -1,4 +1,5 @@
 import requests
+import json
 from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -6,30 +7,46 @@ from rest_framework.response import Response
 from rest_framework import status
 
 def proxy_request(service_name, path, method='GET', data=None, user=None):
-    """Proxy request to microservice"""
+    """Proxy request to microservice with better error handling"""
     service_url = settings.MICROSERVICES.get(service_name)
     if not service_url:
-        return {'error': 'Service not found'}, 404
+        return {'error': f'Service {service_name} not found'}, 404
     
     url = f"{service_url}/{path}"
-    headers = {}
+    headers = {'Content-Type': 'application/json'}
     
     if user and hasattr(user, 'auth_token'):
         headers['Authorization'] = f'Token {user.auth_token.key}'
     
     try:
         if method == 'GET':
-            response = requests.get(url, headers=headers, params=data)
+            response = requests.get(url, headers=headers, params=data, timeout=10)
         elif method == 'POST':
-            response = requests.post(url, headers=headers, json=data)
+            response = requests.post(url, headers=headers, json=data, timeout=10)
         elif method == 'PUT':
-            response = requests.put(url, headers=headers, json=data)
+            response = requests.put(url, headers=headers, json=data, timeout=10)
         elif method == 'DELETE':
-            response = requests.delete(url, headers=headers)
+            response = requests.delete(url, headers=headers, timeout=10)
         
-        return response.json(), response.status_code
+        # Check if response is successful
+        if response.status_code == 200 or response.status_code == 201:
+            try:
+                return response.json(), response.status_code
+            except json.JSONDecodeError:
+                return {'error': 'Invalid JSON response from service', 'raw_response': response.text}, 500
+        else:
+            try:
+                error_data = response.json()
+                return error_data, response.status_code
+            except json.JSONDecodeError:
+                return {'error': f'Service error: {response.status_code}', 'raw_response': response.text}, response.status_code
+                
+    except requests.exceptions.ConnectionError:
+        return {'error': f'Cannot connect to {service_name} service. Is it running?'}, 503
+    except requests.exceptions.Timeout:
+        return {'error': f'Timeout connecting to {service_name} service'}, 504
     except requests.exceptions.RequestException as e:
-        return {'error': str(e)}, 500
+        return {'error': f'Request failed: {str(e)}'}, 500
 
 # User Service Endpoints
 @api_view(['POST'])
@@ -63,12 +80,19 @@ def patient_detail(request, patient_id):
 
 # Doctor Service Endpoints
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])  # Tạm thời cho phép tất cả để test
+@permission_classes([AllowAny])  # Temporarily allow all for testing
 def doctors(request):
     if request.method == 'GET':
         data, status_code = proxy_request('doctor_service', 'api/v1/doctors/', 'GET', request.GET, request.user)
     else:
         data, status_code = proxy_request('doctor_service', 'api/v1/doctors/', 'POST', request.data, request.user)
+    return Response(data, status=status_code)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([AllowAny])
+def doctor_detail(request, doctor_id):
+    path = f'api/v1/doctors/{doctor_id}/'
+    data, status_code = proxy_request('doctor_service', path, request.method, request.data, request.user)
     return Response(data, status=status_code)
 
 # Appointment Service Endpoints

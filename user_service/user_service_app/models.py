@@ -18,6 +18,24 @@ class User(AbstractUser):
     is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # SỬA LỖI: Thêm related_name để tránh xung đột
+    groups = models.ManyToManyField(
+        'auth.Group',
+        verbose_name='groups',
+        blank=True,
+        help_text='The groups this user belongs to.',
+        related_name='custom_user_set',  # Thêm dòng này
+        related_query_name='custom_user',  # Thêm dòng này
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        verbose_name='user permissions',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        related_name='custom_user_set',  # Thêm dòng này
+        related_query_name='custom_user',  # Thêm dòng này
+    )
 
 class Role(models.Model):
     name = models.CharField(max_length=50, unique=True)

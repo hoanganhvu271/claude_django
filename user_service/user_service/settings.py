@@ -90,3 +90,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Service Port
 SERVICE_PORT = 8001
+
+AUTH_USER_MODEL = 'user_service_app.User'

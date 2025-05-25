@@ -21,6 +21,7 @@
             <div class="nav-pill" onclick="showPanel('dashboard')" id="dashboardTab" style="display:none;">Dashboard</div>
             <div class="nav-pill" onclick="showPanel('appointments')" id="appointmentsTab" style="display:none;">Quản lý lịch hẹn</div>
             <div class="nav-pill" onclick="showPanel('book-appointment')" id="bookTab" style="display:none;">Đặt lịch hẹn</div>
+            <div class="nav-pill" onclick="showPanel('health-records')" id="healthRecordsTab" style="display:none;">Hồ sơ sức khỏe</div>
         </div>
 
         <!-- Login Panel -->
@@ -123,6 +124,7 @@
             <div class="dashboard-actions">
                 <button class="btn btn-success" onclick="showPanel('book-appointment')">Đặt lịch hẹn mới</button>
                 <button class="btn btn-secondary" onclick="showPanel('appointments')">Xem tất cả lịch hẹn</button>
+                <button class="btn btn-secondary" onclick="showPanel('health-records')">Xem hồ sơ sức khỏe</button>
                 <button class="btn btn-danger" onclick="logout()">Đăng xuất</button>
             </div>
         </div>
@@ -212,6 +214,43 @@
             <div id="appointmentsList" class="loading">
                 <div class="spinner"></div>
                 <p>Đang tải danh sách lịch hẹn...</p>
+            </div>
+        </div>
+
+        <!-- Health Records Panel -->
+        <div id="health-records" class="content-panel">
+            <h2>📋 Hồ sơ sức khỏe</h2>
+            <div id="healthRecordsAlert"></div>
+            
+            <div class="health-record-filters">
+                <button class="btn btn-success" onclick="loadHealthRecords()">🔄 Làm mới</button>
+                <button class="btn btn-secondary" onclick="loadAllergies()">Xem dị ứng</button>
+            </div>
+
+            <!-- Allergies Section -->
+            <div id="allergiesSection" style="display: none;">
+                <h3>⚠️ Thông tin dị ứng</h3>
+                <div id="allergiesList"></div>
+                <hr>
+            </div>
+
+            <!-- Health Records List -->
+            <div id="healthRecordsList" class="loading">
+                <div class="spinner"></div>
+                <p>Đang tải hồ sơ sức khỏe...</p>
+            </div>
+        </div>
+
+        <!-- Health Record Detail Modal -->
+        <div id="healthRecordModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📋 Chi tiết hồ sơ sức khỏe</h3>
+                    <span class="close" onclick="closeHealthRecordModal()">&times;</span>
+                </div>
+                <div class="modal-body" id="healthRecordModalBody">
+                    <!-- Health record details will be populated here -->
+                </div>
             </div>
         </div>
     </div>

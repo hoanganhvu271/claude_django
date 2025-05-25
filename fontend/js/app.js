@@ -6,6 +6,9 @@ let currentUser = null;
 let authToken = null;
 let allAppointments = [];
 let allDoctors = [];
+let allHealthRecords = [];
+let allAllergies = [];
+let currentPatientId = null;
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
@@ -57,6 +60,8 @@ function showPanel(panelName) {
         loadDashboard();
     } else if (panelName === 'appointments') {
         loadAppointments();
+    } else if (panelName === 'health-records') {
+        loadHealthRecords();
     }
 }
 
@@ -105,10 +110,16 @@ async function handleLogin(e) {
         if (response.ok) {
             authToken = data.token;
             currentUser = data.user;
+            currentPatientId = data.user.id;
             
             // Save to localStorage
             localStorage.setItem('authToken', authToken);
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            // Get patient ID if user is a patient
+            if (currentUser.role === 'patient') {
+                await loadCurrentPatientId();
+            }
             
             showAlert(alertDiv, 'Đăng nhập thành công!', 'success');
             
@@ -122,6 +133,28 @@ async function handleLogin(e) {
     } catch (error) {
         console.error('Login error:', error);
         showAlert(alertDiv, 'Lỗi kết nối. Vui lòng thử lại.', 'error');
+    }
+}
+
+// Load current patient ID
+async function loadCurrentPatientId() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/patients/`, {
+            headers: {
+                'Authorization': `Token ${authToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const patients = await response.json();
+            const currentPatient = patients.find(p => p.user_id === currentUser.id);
+            if (currentPatient) {
+                currentPatientId = currentPatient.id;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading patient ID:', error);
     }
 }
 
@@ -186,6 +219,7 @@ function showLoggedInState() {
     document.getElementById('dashboardTab').style.display = 'block';
     document.getElementById('appointmentsTab').style.display = 'block';
     document.getElementById('bookTab').style.display = 'block';
+    document.getElementById('healthRecordsTab').style.display = 'block';
     
     // Hide login/register tabs
     const loginTab = document.querySelector('[onclick="showPanel(\'login\')"]');
@@ -199,6 +233,7 @@ function logout() {
     if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
         authToken = null;
         currentUser = null;
+        currentPatientId = null;
         localStorage.removeItem('authToken');
         localStorage.removeItem('currentUser');
         
@@ -212,6 +247,7 @@ function logout() {
         document.getElementById('dashboardTab').style.display = 'none';
         document.getElementById('appointmentsTab').style.display = 'none';
         document.getElementById('bookTab').style.display = 'none';
+        document.getElementById('healthRecordsTab').style.display = 'none';
         
         // Go to login panel
         showPanel('login');
@@ -526,6 +562,289 @@ Trạng thái: ${getStatusDisplayName(appointment.status)}
 Ngày tạo: ${new Date(appointment.created_at).toLocaleDateString('vi-VN')}`);
 }
 
+// Load health records
+async function loadHealthRecords(showAlerts = true) {
+    if (!currentUser || !currentPatientId) {
+        console.warn('Không có người dùng hoặc ID bệnh nhân hiện tại', currentUser, currentPatientId);
+        const alertDiv = document.getElementById('healthRecordsAlert');
+        showAlert(alertDiv, 'Không thể tải hồ sơ sức khỏe. Vui lòng đăng nhập lại.', 'error');
+        return;
+    }
+    
+    const alertDiv = document.getElementById('healthRecordsAlert');
+    const healthRecordsList = document.getElementById('healthRecordsList');
+    
+    if (showAlerts) {
+        healthRecordsList.innerHTML = `
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Đang tải hồ sơ sức khỏe...</p>
+            </div>
+        `;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/patients/${currentPatientId}/health-records/`, {
+            headers: {
+                'Authorization': `Token ${authToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const healthRecords = await response.json();
+            allHealthRecords = healthRecords;
+            displayHealthRecords(healthRecords);
+            
+            if (showAlerts) {
+                showAlert(alertDiv, `Đã tải ${healthRecords.length} hồ sơ sức khỏe`, 'success');
+            }
+        } else {
+            const data = await response.json();
+            if (showAlerts) {
+                showAlert(alertDiv, data.error || 'Không thể tải hồ sơ sức khỏe', 'error');
+            }
+            healthRecordsList.innerHTML = '<p>Không thể tải hồ sơ sức khỏe</p>';
+        }
+    } catch (error) {
+        console.error('Error loading health records:', error);
+        if (showAlerts) {
+            showAlert(alertDiv, 'Lỗi kết nối. Vui lòng thử lại.', 'error');
+        }
+        healthRecordsList.innerHTML = '<p>Lỗi kết nối</p>';
+    }
+}
+
+// Display health records
+function displayHealthRecords(healthRecords) {
+    const healthRecordsList = document.getElementById('healthRecordsList');
+    
+    if (healthRecords.length === 0) {
+        healthRecordsList.innerHTML = '<p>Không có hồ sơ sức khỏe nào.</p>';
+        return;
+    }
+    
+    healthRecordsList.innerHTML = healthRecords.map(record => {
+        const doctor = allDoctors.find(d => d.id === record.doctor_id);
+        const doctorName = doctor ? 
+            `BS. ${doctor.first_name} ${doctor.last_name}` : 
+            `Bác sĩ ID: ${record.doctor_id}`;
+        
+        const visitDate = new Date(record.visit_date).toLocaleDateString('vi-VN');
+        const visitTime = new Date(record.visit_date).toLocaleTimeString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        return `
+            <div class="health-record-card">
+                <div class="health-record-header">
+                    <div class="health-record-date">${visitDate} - ${visitTime}</div>
+                </div>
+                <div class="health-record-doctor">👨‍⚕️ ${doctorName}</div>
+                <div class="health-record-complaint">
+                    <strong>Lý do khám:</strong> ${record.chief_complaint}
+                </div>
+                <div class="health-record-diagnosis">
+                    <strong>Chẩn đoán:</strong> ${record.diagnosis}
+                </div>
+                <div class="health-record-actions">
+                    <button class="btn btn-info" onclick="viewHealthRecordDetails(${record.id})">Xem chi tiết</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// View health record details
+function viewHealthRecordDetails(recordId) {
+    const record = allHealthRecords.find(r => r.id === recordId);
+    if (!record) return;
+    
+    const doctor = allDoctors.find(d => d.id === record.doctor_id);
+    const doctorName = doctor ? 
+        `BS. ${doctor.first_name} ${doctor.last_name}` : 
+        `Bác sĩ ID: ${record.doctor_id}`;
+    
+    const visitDate = new Date(record.visit_date).toLocaleDateString('vi-VN');
+    const visitTime = new Date(record.visit_date).toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    // Show modal with detailed information
+    const modal = document.getElementById('healthRecordModal');
+    const modalBody = document.getElementById('healthRecordModalBody');
+    
+    modalBody.innerHTML = `
+        <div class="detail-section">
+            <h4>📅 Thông tin khám</h4>
+            <p><strong>Ngày khám:</strong> ${visitDate} lúc ${visitTime}</p>
+            <p><strong>Bác sĩ khám:</strong> ${doctorName}</p>
+            <p><strong>Chuyên khoa:</strong> ${doctor ? doctor.specialization : 'Không xác định'}</p>
+        </div>
+        
+        <div class="detail-section">
+            <h4>🗣️ Triệu chứng</h4>
+            <p><strong>Lý do khám:</strong> ${record.chief_complaint}</p>
+            <p><strong>Tiền sử bệnh:</strong> ${record.history_present_illness}</p>
+        </div>
+        
+        <div class="detail-section">
+            <h4>🔍 Khám lâm sàng</h4>
+            <p>${record.physical_examination}</p>
+        </div>
+        
+        <div class="detail-section">
+            <h4>⚕️ Chẩn đoán</h4>
+            <p>${record.diagnosis}</p>
+        </div>
+        
+        <div class="detail-section">
+            <h4>💊 Phương án điều trị</h4>
+            <p>${record.treatment_plan}</p>
+        </div>
+        
+        ${record.notes ? `
+            <div class="detail-section">
+                <h4>📝 Ghi chú thêm</h4>
+                <p>${record.notes}</p>
+            </div>
+        ` : ''}
+        
+        ${record.vital_signs && record.vital_signs.length > 0 ? `
+            <div class="detail-section">
+                <h4>📊 Chỉ số sinh hiệu</h4>
+                <div class="vital-signs-grid">
+                    ${record.vital_signs.map(vs => `
+                        ${vs.temperature ? `
+                            <div class="vital-sign-item">
+                                <div class="vital-sign-value">${vs.temperature}°C</div>
+                                <div class="vital-sign-label">Nhiệt độ</div>
+                            </div>
+                        ` : ''}
+                        ${vs.blood_pressure_systolic && vs.blood_pressure_diastolic ? `
+                            <div class="vital-sign-item">
+                                <div class="vital-sign-value">${vs.blood_pressure_systolic}/${vs.blood_pressure_diastolic}</div>
+                                <div class="vital-sign-label">Huyết áp (mmHg)</div>
+                            </div>
+                        ` : ''}
+                        ${vs.heart_rate ? `
+                            <div class="vital-sign-item">
+                                <div class="vital-sign-value">${vs.heart_rate}</div>
+                                <div class="vital-sign-label">Nhịp tim (lần/phút)</div>
+                            </div>
+                        ` : ''}
+                        ${vs.respiratory_rate ? `
+                            <div class="vital-sign-item">
+                                <div class="vital-sign-value">${vs.respiratory_rate}</div>
+                                <div class="vital-sign-label">Nhịp thở (lần/phút)</div>
+                            </div>
+                        ` : ''}
+                        ${vs.weight ? `
+                            <div class="vital-sign-item">
+                                <div class="vital-sign-value">${vs.weight} kg</div>
+                                <div class="vital-sign-label">Cân nặng</div>
+                            </div>
+                        ` : ''}
+                        ${vs.height ? `
+                            <div class="vital-sign-item">
+                                <div class="vital-sign-value">${vs.height} cm</div>
+                                <div class="vital-sign-label">Chiều cao</div>
+                            </div>
+                        ` : ''}
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+    `;
+    
+    modal.style.display = 'block';
+}
+
+// Close health record modal
+function closeHealthRecordModal() {
+    const modal = document.getElementById('healthRecordModal');
+    modal.style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('healthRecordModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Load allergies
+async function loadAllergies() {
+    if (!currentUser || !currentPatientId) {
+        const alertDiv = document.getElementById('healthRecordsAlert');
+        showAlert(alertDiv, 'Không thể tải thông tin dị ứng.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/patients/${currentPatientId}/allergies/`, {
+            headers: {
+                'Authorization': `Token ${authToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const allergies = await response.json();
+            allAllergies = allergies;
+            displayAllergies(allergies);
+            
+            // Show allergies section
+            document.getElementById('allergiesSection').style.display = 'block';
+        } else {
+            const data = await response.json();
+            showAlert(document.getElementById('healthRecordsAlert'), data.error || 'Không thể tải thông tin dị ứng', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading allergies:', error);
+        showAlert(document.getElementById('healthRecordsAlert'), 'Lỗi kết nối khi tải thông tin dị ứng.', 'error');
+    }
+}
+
+// Display allergies
+function displayAllergies(allergies) {
+    const allergiesList = document.getElementById('allergiesList');
+    
+    if (allergies.length === 0) {
+        allergiesList.innerHTML = '<p>Không có thông tin dị ứng được ghi nhận.</p>';
+        return;
+    }
+    
+    allergiesList.innerHTML = allergies.map(allergy => {
+        return `
+            <div class="allergy-card">
+                <div class="allergy-header">
+                    <div class="allergy-name">⚠️ ${allergy.allergen}</div>
+                    <div class="severity-badge severity-${allergy.severity}">
+                        ${getSeverityDisplayName(allergy.severity)}
+                    </div>
+                </div>
+                <div class="allergy-reaction">
+                    <strong>Phản ứng:</strong> ${allergy.reaction}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Get severity display name
+function getSeverityDisplayName(severity) {
+    const severityMap = {
+        'mild': 'Nhẹ',
+        'moderate': 'Trung bình',
+        'severe': 'Nặng'
+    };
+    return severityMap[severity] || severity;
+}
+
 // Show alert
 function showAlert(container, message, type) {
     if (!container) return;
@@ -570,9 +889,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Auto-refresh appointments every 30 seconds when on appointments panel
+// Auto-refresh data every 30 seconds when on respective panels
 setInterval(() => {
-    if (document.getElementById('appointments').classList.contains('active') && authToken) {
-        loadAppointments(false);
+    if (authToken) {
+        if (document.getElementById('appointments').classList.contains('active')) {
+            loadAppointments(false);
+        }
+        if (document.getElementById('health-records').classList.contains('active')) {
+            loadHealthRecords(false);
+        }
     }
 }, 30000);

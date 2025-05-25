@@ -184,6 +184,10 @@ textarea.form-control {
     background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
 }
 
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%);
+}
+
 .row {
     display: flex;
     gap: 20px;
@@ -382,7 +386,8 @@ textarea.form-control {
     100% { transform: rotate(360deg); }
 }
 
-.appointment-filters {
+.appointment-filters,
+.health-record-filters {
     margin-bottom: 20px;
     display: flex;
     gap: 10px;
@@ -396,6 +401,237 @@ textarea.form-control {
     margin-top: 10px;
     font-size: 0.9rem;
     color: #666;
+}
+
+/* Health Records Styles */
+.health-record-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-left: 5px solid #28a745;
+    transition: transform 0.3s ease;
+}
+
+.health-record-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.health-record-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.health-record-date {
+    font-weight: 600;
+    color: #28a745;
+    font-size: 1.1rem;
+}
+
+.health-record-doctor {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.health-record-diagnosis {
+    background: #e8f5e8;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 3px solid #28a745;
+}
+
+.health-record-diagnosis strong {
+    color: #155724;
+}
+
+.health-record-complaint {
+    color: #666;
+    margin-bottom: 10px;
+    font-style: italic;
+}
+
+.health-record-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.health-record-actions .btn {
+    width: auto;
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.vital-signs {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+}
+
+.vital-signs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.vital-sign-item {
+    background: white;
+    padding: 8px;
+    border-radius: 5px;
+    text-align: center;
+    border: 1px solid #e0e0e0;
+}
+
+.vital-sign-value {
+    font-weight: bold;
+    color: #667eea;
+    font-size: 1.1rem;
+}
+
+.vital-sign-label {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 2px;
+}
+
+.allergy-card {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-left: 5px solid #f39c12;
+}
+
+.allergy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.allergy-name {
+    font-weight: 600;
+    color: #856404;
+    font-size: 1.1rem;
+}
+
+.severity-badge {
+    padding: 3px 8px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.severity-mild {
+    background: #d4edda;
+    color: #155724;
+}
+
+.severity-moderate {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.severity-severe {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.allergy-reaction {
+    color: #666;
+    margin-top: 5px;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 15px 15px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+}
+
+.close {
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.close:hover {
+    opacity: 1;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.detail-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 10px;
+    background: #f8f9fa;
+}
+
+.detail-section h4 {
+    color: #333;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 5px;
+}
+
+.detail-section p {
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+.detail-section strong {
+    color: #555;
 }
 
 /* Responsive Design */
@@ -431,17 +667,30 @@ textarea.form-control {
         flex-direction: column;
     }
     
-    .appointment-header {
+    .appointment-header,
+    .health-record-header {
         flex-direction: column;
         align-items: flex-start;
     }
     
-    .appointment-filters {
+    .appointment-filters,
+    .health-record-filters {
         flex-direction: column;
     }
     
-    .appointment-actions {
+    .appointment-actions,
+    .health-record-actions {
         flex-direction: column;
+    }
+    
+    .vital-signs-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 2% auto;
+        max-height: 90vh;
     }
 }
 

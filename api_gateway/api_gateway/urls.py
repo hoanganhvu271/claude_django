@@ -30,6 +30,12 @@ urlpatterns = [
     path('api/v1/appointments/', views.appointments, name='appointments'),
     path('api/v1/appointments/<int:appointment_id>/', views.appointment_detail, name='appointment-detail'),
     
+    # Health Record endpoints
+    path('api/v1/health-records/', views.health_records, name='health-records'),
+    path('api/v1/health-records/<int:record_id>/', views.health_record_detail, name='health-record-detail'),
+    path('api/v1/patients/<int:patient_id>/health-records/', views.patient_health_records, name='patient-health-records'),
+    path('api/v1/patients/<int:patient_id>/allergies/', views.patient_allergies, name='patient-allergies'),
+    
     # Chatbot endpoints
     path('api/v1/chatbot/sessions/', views.create_chat_session, name='create-chat'),
     path('api/v1/chatbot/message/', views.send_chat_message, name='send-message'),

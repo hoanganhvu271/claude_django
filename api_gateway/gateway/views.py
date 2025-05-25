@@ -113,6 +113,37 @@ def appointment_detail(request, appointment_id):
     data, status_code = proxy_request('appointment_service', path, request.method, request.data, request.user)
     return Response(data, status=status_code)
 
+# Health Record Service Endpoints
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def health_records(request):
+    if request.method == 'GET':
+        data, status_code = proxy_request('health_record_service', 'api/v1/health-records/', 'GET', request.GET, request.user)
+    else:
+        data, status_code = proxy_request('health_record_service', 'api/v1/health-records/', 'POST', request.data, request.user)
+    return Response(data, status=status_code)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([AllowAny])
+def health_record_detail(request, record_id):
+    path = f'api/v1/health-records/{record_id}/'
+    data, status_code = proxy_request('health_record_service', path, request.method, request.data, request.user)
+    return Response(data, status=status_code)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def patient_health_records(request, patient_id):
+    path = f'api/v1/patients/{patient_id}/health-records/'
+    data, status_code = proxy_request('health_record_service', path, 'GET', request.GET, request.user)
+    return Response(data, status=status_code)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def patient_allergies(request, patient_id):
+    path = f'api/v1/patients/{patient_id}/allergies/'
+    data, status_code = proxy_request('health_record_service', path, 'GET', request.GET, request.user)
+    return Response(data, status=status_code)
+
 # Chatbot Service Endpoints
 @api_view(['POST'])
 @permission_classes([AllowAny])

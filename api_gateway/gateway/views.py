@@ -156,3 +156,16 @@ def create_chat_session(request):
 def send_chat_message(request):
     data, status_code = proxy_request('chatbot_service', 'api/v1/chatbot/message/', 'POST', request.data, request.user)
     return Response(data, status=status_code)
+
+# Chatbot Medical Service Endpoints
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def create_medical_chat_session(request):
+    data, status_code = proxy_request('chatbot_service', 'api/v1/chatbot/sessions/', 'POST', request.data)
+    return Response(data, status=status_code)
+
+@api_view(['POST'])  
+@permission_classes([AllowAny])
+def send_medical_message(request):
+    data, status_code = proxy_request('chatbot_service', 'api/v1/chatbot/message/', 'POST', request.data)
+    return Response(data, status=status_code)

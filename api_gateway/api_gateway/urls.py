@@ -39,4 +39,6 @@ urlpatterns = [
     # Chatbot endpoints
     path('api/v1/chatbot/sessions/', views.create_chat_session, name='create-chat'),
     path('api/v1/chatbot/message/', views.send_chat_message, name='send-message'),
+
+    
 ]

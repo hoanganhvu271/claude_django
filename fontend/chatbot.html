@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Medical Chatbot - Trợ lý chẩn đoán thông minh</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chatbot-container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chatbot-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .chatbot-header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .chatbot-header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .session-type-selector {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .session-type-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+        }
+
+        .session-type-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .session-type-btn.active {
+            background: rgba(255,255,255,0.9);
+            color: #667eea;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #e9ecef;
+        }
+
+        .message.bot.diagnosis {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0fff0 100%);
+            border-left: 4px solid #28a745;
+        }
+
+        .message.bot.emergency {
+            background: linear-gradient(135deg, #ffe6e6 0%, #fff5f5 100%);
+            border-left: 4px solid #dc3545;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+
+        .message-timestamp {
+            font-size: 0.7rem;
+            opacity: 0.6;
+            margin-top: 5px;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background: #f8f9fa;
+            padding: 12px 16px;
+            border-radius: 18px;
+            border: 1px solid #e9ecef;
+        }
+
+        .typing-indicator.show {
+            display: block;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dots span:nth-child(1) { animation-delay: 0s; }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .quick-responses {
+            display: none;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .quick-responses.show {
+            display: flex;
+        }
+
+        .quick-response-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quick-response-btn:hover {
+            background: #e9ecef;
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 14px;
+            resize: none;
+            max-height: 100px;
+            min-height: 20px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .diagnosis-summary {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid #2196f3;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .diagnosis-summary h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .possible-diseases {
+            margin-bottom: 15px;
+        }
+
+        .disease-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .disease-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .confidence-badge {
+            background: #4caf50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+        }
+
+        .confidence-badge.medium {
+            background: #ff9800;
+        }
+
+        .confidence-badge.low {
+            background: #f44336;
+        }
+
+        .recommendations {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .recommendations h5 {
+            color: #f57c00;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .recommendations ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .recommendations li {
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+            color: #333;
+        }
+
+        .session-info {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+
+        .session-info:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .emergency-alert {
+            background: #dc3545;
+            color: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            text-align: center;
+            animation: emergencyBlink 1s infinite;
+        }
+
+        @keyframes emergencyBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.8; }
+        }
+
+        .symptom-tracker {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.85rem;
+        }
+
+        .symptom-tracker h5 {
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .symptom-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .symptom-tag {
+            background: #e9ecef;
+            color: #495057;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+        }
+
+        .symptom-tag.severe {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .symptom-tag.moderate {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .clear-chat-btn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .clear-chat-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        @media (max-width: 768px) {
+            .chatbot-container {
+                height: 100vh;
+                border-radius: 0;
+                margin: 0;
+            }
+
+            .chatbot-header {
+                padding: 15px;
+            }
+
+            .chatbot-header h1 {
+                font-size: 1.3rem;
+            }
+
+            .session-type-selector {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .session-info {
+                position: static;
+                display: inline-block;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chatbot-container">
+        <div class="chatbot-header">
+            <div class="session-info" onclick="showSessionInfo()">
+                <span id="sessionStatus">🟢 Đang hoạt động</span>
+            </div>
+            <h1>🩺 AI Medical Assistant</h1>
+            <p>Trợ lý chẩn đoán thông minh - Hỗ trợ 24/7</p>
+            
+            <div class="session-type-selector">
+                <button class="session-type-btn active" onclick="setSessionType('medical')">
+                    🏥 Chẩn đoán y tế
+                </button>
+                <button class="session-type-btn" onclick="setSessionType('general')">
+                    💬 Tư vấn chung
+                </button>
+                <button class="clear-chat-btn" onclick="clearChat()">
+                    🗑️ Xóa chat
+                </button>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will be added here dynamically -->
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <div class="quick-responses" id="quickResponses">
+                <!-- Quick response buttons will be added here -->
+            </div>
+            
+            <div class="chat-input-group">
+                <textarea 
+                    class="chat-input" 
+                    id="chatInput" 
+                    placeholder="Mô tả triệu chứng của bạn..." 
+                    rows="1"
+                    onkeypress="handleKeyPress(event)"
+                    oninput="adjustTextareaHeight(this)"
+                ></textarea>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentSessionId = null;
+        let currentSessionType = 'medical';
+        let isWaitingForResponse = false;
+        let reportedSymptoms = [];
+        let currentDiagnosis = null;
+
+        // Initialize chatbot
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeChatbot();
+        });
+
+        async function initializeChatbot() {
+            try {
+                const response = await fetch('/api/v1/chatbot/sessions/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: getUserId(),
+                        session_type: currentSessionType
+                    })
+                });
+
+                const data = await response.json();
+                currentSessionId = data.session_id;
+                
+                // Add welcome message
+                addMessage('bot', data.message, 'greeting');
+                
+                // Show quick responses for medical sessions
+                if (currentSessionType === 'medical') {
+                    showMedicalQuickResponses();
+                }
+                
+            } catch (error) {
+                console.error('Error initializing chatbot:', error);
+                addMessage('bot', 'Xin lỗi, có lỗi xảy ra khi khởi tạo chatbot. Vui lòng thử lại.', 'error');
+            }
+        }
+
+        function getUserId() {
+            // Get user ID from localStorage or generate a temporary one
+            let userId = localStorage.getItem('tempUserId');
+            if (!userId) {
+                userId = 'temp_' + Date.now();
+                localStorage.setItem('tempUserId', userId);
+            }
+            return userId;
+        }
+
+        function setSessionType(type) {
+            currentSessionType = type;
+            
+            // Update UI
+            document.querySelectorAll('.session-type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Clear current chat and start new session
+            clearChat();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message || isWaitingForResponse) return;
+            
+            // Add user message to chat
+            addMessage('user', message);
+            input.value = '';
+            adjustTextareaHeight(input);
+            
+            // Show typing indicator
+            showTypingIndicator();
+            isWaitingForResponse = true;
+            
+            try {
+                const response = await fetch('/api/v1/chatbot/message/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        session_id: currentSessionId,
+                        message: message
+                    })
+                });
+
+                const data = await response.json();
+                
+                // Hide typing indicator
+                hideTypingIndicator();
+                
+                // Add bot response
+                const botMessage = data.bot_response;
+                addMessage('bot', botMessage.message, botMessage.message_type, {
+                    intent: botMessage.intent,
+                    recommendations: data.recommendations,
+                    sessionStatus: data.session_status
+                });
+                
+                // Update diagnosis if medical session
+                if (currentSessionType === 'medical' && botMessage.message_type === 'diagnosis') {
+                    updateDiagnosisDisplay(data);
+                }
+                
+                // Show quick responses based on context
+                updateQuickResponses(botMessage.intent, botMessage.message_type);
+                
+            } catch (error) {
+                console.error('Error sending message:', error);
+                hideTypingIndicator();
+                addMessage('bot', 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.', 'error');
+            } finally {
+                isWaitingForResponse = false;
+            }
+        }
+
+        function addMessage(sender, content, type = 'general', metadata = {}) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            if (type) {
+                messageDiv.classList.add(type);
+            }
+            
+            // Format content based on type
+            let formattedContent = content;
+            if (type === 'diagnosis' && metadata.recommendations) {
+                formattedContent += formatRecommendations(metadata.recommendations);
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-content">${formatMessageContent(formattedContent)}</div>
+                <div class="message-timestamp">${getCurrentTime()}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function formatMessageContent(content) {
+            // Convert markdown-like formatting to HTML
+            return content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>')
+                .replace(/•/g, '•');
+        }
+
+        function formatRecommendations(recommendations) {
+            if (!recommendations || recommendations.length === 0) return '';
+            
+            return `
+                <div class="recommendations">
+                    <h5>💡 Khuyến nghị:</h5>
+                    <ul>
+                        ${recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        function updateDiagnosisDisplay(data) {
+            // This would be called when we have diagnosis results
+            // Implementation would show possible diseases, confidence levels, etc.
+            if (data.diagnosis_result) {
+                const diagnosisHtml = `
+                    <div class="diagnosis-summary">
+                        <h4>📋 Kết quả phân tích sơ bộ:</h4>
+                        <div class="possible-diseases">
+                            ${data.diagnosis_result.diseases.map(disease => `
+                                <div class="disease-item">
+                                    <span class="disease-name">${disease.name}</span>
+                                    <span class="confidence-badge ${getConfidenceClass(disease.confidence)}">
+                                        ${(disease.confidence * 100).toFixed(0)}%
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                
+                const lastMessage = document.querySelector('.message.bot:last-child .message-content');
+                if (lastMessage) {
+                    lastMessage.innerHTML += diagnosisHtml;
+                }
+            }
+        }
+
+        function getConfidenceClass(confidence) {
+            if (confidence > 0.7) return 'high';
+            if (confidence > 0.4) return 'medium';
+            return 'low';
+        }
+
+        function showMedicalQuickResponses() {
+            const quickResponses = [
+                "Tôi bị đau đầu",
+                "Tôi bị sốt",
+                "Tôi cảm thấy buồn nôn",
+                "Tôi bị ho",
+                "Tôi cảm thấy mệt mỏi"
+            ];
+            
+            updateQuickResponsesUI(quickResponses);
+        }
+
+        function updateQuickResponses(intent, messageType) {
+            let responses = [];
+            
+            if (messageType === 'inquiry') {
+                responses = [
+                    "Có, mức độ nặng",
+                    "Không, mức độ nhẹ",
+                    "Từ hôm qua",
+                    "Từ vài ngày nay",
+                    "Tôi cần hỗ trợ thêm"
+                ];
+            } else if (intent === 'medical_suggestion') {
+                responses = [
+                    "Có, hãy giúp tôi phân tích",
+                    "Không, cảm ơn",
+                    "Tôi cần tư vấn chung"
+                ];
+            } else if (currentSessionType === 'general') {
+                responses = [
+                    "Đặt lịch khám",
+                    "Thông tin bệnh viện",
+                    "Hỏi về bảo hiểm",
+                    "Tư vấn sức khỏe"
+                ];
+            }
+            
+            updateQuickResponsesUI(responses);
+        }
+
+        function updateQuickResponsesUI(responses) {
+            const container = document.getElementById('quickResponses');
+            
+            if (responses.length === 0) {
+                container.classList.remove('show');
+                return;
+            }
+            
+            container.innerHTML = responses.map(response => 
+                `<button class="quick-response-btn" onclick="selectQuickResponse('${response}')">${response}</button>`
+            ).join('');
+            
+            container.classList.add('show');
+        }
+
+        function selectQuickResponse(response) {
+            document.getElementById('chatInput').value = response;
+            sendMessage();
+            
+            // Hide quick responses after selection
+            document.getElementById('quickResponses').classList.remove('show');
+        }
+
+        function showTypingIndicator() {
+            document.getElementById('typingIndicator').classList.add('show');
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').classList.remove('show');
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function adjustTextareaHeight(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
+        }
+
+        function getCurrentTime() {
+            return new Date().toLocaleTimeString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function clearChat() {
+            document.getElementById('chatMessages').innerHTML = '';
+            document.getElementById('quickResponses').classList.remove('show');
+            reportedSymptoms = [];
+            currentDiagnosis = null;
+            
+            // Initialize new session
+            initializeChatbot();
+        }
+
+        function showSessionInfo() {
+            alert(`Session ID: ${currentSessionId}\nLoại: ${currentSessionType}\nTriệu chứng đã báo cáo: ${reportedSymptoms.length}`);
+        }
+
+        // Auto-resize textarea on input
+        document.getElementById('chatInput').addEventListener('input', function() {
+            adjustTextareaHeight(this);
+        });
+    </script>
+</body>
+</html>

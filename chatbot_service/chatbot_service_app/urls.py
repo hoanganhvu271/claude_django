@@ -13,6 +13,4 @@ urlpatterns = [
     # Utilities
     path('api/extract-symptoms/', views.extract_symptoms_only, name='extract-symptoms'),
     
-    # Health check
-    path('health/', views.health_check, name='health-check'),
 ]

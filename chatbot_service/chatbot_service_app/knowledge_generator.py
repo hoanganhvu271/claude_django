@@ -1,6 +1,7 @@
 from sentence_transformers import SentenceTransformer
 from typing import List, Dict
 import logging
+import random
 
 logger = logging.getLogger(__name__)
 

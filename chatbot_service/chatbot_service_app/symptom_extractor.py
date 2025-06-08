@@ -1,6 +1,7 @@
 from sentence_transformers import SentenceTransformer
 import re
 from typing import List, Dict, Set
+import numpy as np
 
 class SymptomExtractor:
     """Extract symptoms from Vietnamese medical text using NLP"""

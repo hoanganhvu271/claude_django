@@ -12,6 +12,11 @@ import os
 from typing import List, Dict, Tuple, Optional
 import logging
 
+from .ml_models import DiseasePredictionNetwork
+
+from .knowledge_generator import MedicalKnowledgeGenerator
+from .symptom_extractor import SymptomExtractor
+
 logger = logging.getLogger(__name__)
 
 class MLEngine:
@@ -56,7 +61,7 @@ class MLEngine:
         """Prepare training data from database"""
         from .models import Disease, Symptom, DiseaseSymptom
         
-        diseases = list(Disease.objects.filter(is_active=True))
+        diseases = list(Disease.objects.all())
         symptoms = list(Symptom.objects.all())
         
         if len(diseases) < 2 or len(symptoms) < 3:
@@ -116,8 +121,9 @@ class MLEngine:
             
             # Split data
             X_train, X_test, y_train, y_test = train_test_split(
-                X_scaled, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
+                X_scaled, y_encoded, test_size=0.2, random_state=42
             )
+
             
             # Create model
             num_symptoms = X.shape[1]

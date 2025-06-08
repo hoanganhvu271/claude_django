@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views  # Sửa từ 'from gateway import views' thành 'from . import views'
 
 urlpatterns = [
     # Chat session management

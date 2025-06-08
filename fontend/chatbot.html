@@ -243,147 +243,13 @@
             transform: none;
         }
 
-        .diagnosis-summary {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            border: 1px solid #2196f3;
-            border-radius: 12px;
-            padding: 15px;
-            margin: 10px 0;
-        }
-
-        .diagnosis-summary h4 {
-            color: #1976d2;
-            margin-bottom: 10px;
-            font-size: 1rem;
-        }
-
-        .possible-diseases {
-            margin-bottom: 15px;
-        }
-
-        .disease-item {
-            background: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin-bottom: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .disease-name {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .confidence-badge {
-            background: #4caf50;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-        }
-
-        .confidence-badge.medium {
-            background: #ff9800;
-        }
-
-        .confidence-badge.low {
-            background: #f44336;
-        }
-
-        .recommendations {
-            background: #fff3e0;
-            border-left: 4px solid #ff9800;
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 10px;
-        }
-
-        .recommendations h5 {
-            color: #f57c00;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-        }
-
-        .recommendations ul {
-            margin: 0;
-            padding-left: 20px;
-        }
-
-        .recommendations li {
-            margin-bottom: 5px;
-            font-size: 0.85rem;
-            color: #333;
-        }
-
-        .session-info {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            background: rgba(255,255,255,0.2);
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.7rem;
-            cursor: pointer;
-        }
-
-        .session-info:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        .emergency-alert {
-            background: #dc3545;
-            color: white;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-            text-align: center;
-            animation: emergencyBlink 1s infinite;
-        }
-
-        @keyframes emergencyBlink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0.8; }
-        }
-
-        .symptom-tracker {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 10px;
-            margin: 10px 0;
-            font-size: 0.85rem;
-        }
-
-        .symptom-tracker h5 {
-            color: #495057;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-        }
-
-        .symptom-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-
-        .symptom-tag {
-            background: #e9ecef;
-            color: #495057;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-        }
-
-        .symptom-tag.severe {
+        .error-message {
             background: #f8d7da;
             color: #721c24;
-        }
-
-        .symptom-tag.moderate {
-            background: #fff3cd;
-            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #f5c6cb;
         }
 
         .clear-chat-btn {
@@ -424,21 +290,12 @@
             .message {
                 max-width: 90%;
             }
-
-            .session-info {
-                position: static;
-                display: inline-block;
-                margin-top: 10px;
-            }
         }
     </style>
 </head>
 <body>
     <div class="chatbot-container">
         <div class="chatbot-header">
-            <div class="session-info" onclick="showSessionInfo()">
-                <span id="sessionStatus">🟢 Đang hoạt động</span>
-            </div>
             <h1>🩺 AI Medical Assistant</h1>
             <p>Trợ lý chẩn đoán thông minh - Hỗ trợ 24/7</p>
             
@@ -492,11 +349,10 @@
 
     <script>
         // Global variables
+        const API_BASE_URL = 'http://localhost:8000/api/v1';
         let currentSessionId = null;
         let currentSessionType = 'medical';
         let isWaitingForResponse = false;
-        let reportedSymptoms = [];
-        let currentDiagnosis = null;
 
         // Initialize chatbot
         document.addEventListener('DOMContentLoaded', function() {
@@ -505,7 +361,9 @@
 
         async function initializeChatbot() {
             try {
-                const response = await fetch('/api/v1/chatbot/sessions/', {
+                console.log('Initializing chatbot...');
+                
+                const response = await fetch(`${API_BASE_URL}/chatbot/sessions/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -516,7 +374,18 @@
                     })
                 });
 
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server response:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText || 'Unknown error'}`);
+                }
+
                 const data = await response.json();
+                console.log('Session created:', data);
+                
                 currentSessionId = data.session_id;
                 
                 // Add welcome message
@@ -529,7 +398,8 @@
                 
             } catch (error) {
                 console.error('Error initializing chatbot:', error);
-                addMessage('bot', 'Xin lỗi, có lỗi xảy ra khi khởi tạo chatbot. Vui lòng thử lại.', 'error');
+                showError(`Không thể kết nối đến server: ${error.message}`);
+                addMessage('bot', 'Xin lỗi, có lỗi xảy ra khi khởi tạo chatbot. Vui lòng kiểm tra kết nối và thử lại.', 'error');
             }
         }
 
@@ -561,6 +431,12 @@
             const message = input.value.trim();
             
             if (!message || isWaitingForResponse) return;
+
+            if (!currentSessionId) {
+                showError('Chưa có phiên chat. Đang thử khởi tạo lại...');
+                await initializeChatbot();
+                return;
+            }
             
             // Add user message to chat
             addMessage('user', message);
@@ -572,7 +448,7 @@
             isWaitingForResponse = true;
             
             try {
-                const response = await fetch('/api/v1/chatbot/message/', {
+                const response = await fetch(`${API_BASE_URL}/chatbot/message/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -582,6 +458,11 @@
                         message: message
                     })
                 });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
 
                 const data = await response.json();
                 
@@ -596,18 +477,14 @@
                     sessionStatus: data.session_status
                 });
                 
-                // Update diagnosis if medical session
-                if (currentSessionType === 'medical' && botMessage.message_type === 'diagnosis') {
-                    updateDiagnosisDisplay(data);
-                }
-                
                 // Show quick responses based on context
                 updateQuickResponses(botMessage.intent, botMessage.message_type);
                 
             } catch (error) {
                 console.error('Error sending message:', error);
                 hideTypingIndicator();
-                addMessage('bot', 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.', 'error');
+                showError(`Lỗi khi gửi tin nhắn: ${error.message}`);
+                addMessage('bot', 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.', 'error');
             } finally {
                 isWaitingForResponse = false;
             }
@@ -657,39 +534,6 @@
                     </ul>
                 </div>
             `;
-        }
-
-        function updateDiagnosisDisplay(data) {
-            // This would be called when we have diagnosis results
-            // Implementation would show possible diseases, confidence levels, etc.
-            if (data.diagnosis_result) {
-                const diagnosisHtml = `
-                    <div class="diagnosis-summary">
-                        <h4>📋 Kết quả phân tích sơ bộ:</h4>
-                        <div class="possible-diseases">
-                            ${data.diagnosis_result.diseases.map(disease => `
-                                <div class="disease-item">
-                                    <span class="disease-name">${disease.name}</span>
-                                    <span class="confidence-badge ${getConfidenceClass(disease.confidence)}">
-                                        ${(disease.confidence * 100).toFixed(0)}%
-                                    </span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-                
-                const lastMessage = document.querySelector('.message.bot:last-child .message-content');
-                if (lastMessage) {
-                    lastMessage.innerHTML += diagnosisHtml;
-                }
-            }
-        }
-
-        function getConfidenceClass(confidence) {
-            if (confidence > 0.7) return 'high';
-            if (confidence > 0.4) return 'medium';
-            return 'low';
         }
 
         function showMedicalQuickResponses() {
@@ -766,6 +610,15 @@
             document.getElementById('typingIndicator').classList.remove('show');
         }
 
+        function showError(message) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            messagesContainer.appendChild(errorDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
         function handleKeyPress(event) {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
@@ -788,15 +641,10 @@
         function clearChat() {
             document.getElementById('chatMessages').innerHTML = '';
             document.getElementById('quickResponses').classList.remove('show');
-            reportedSymptoms = [];
-            currentDiagnosis = null;
+            currentSessionId = null;
             
             // Initialize new session
             initializeChatbot();
-        }
-
-        function showSessionInfo() {
-            alert(`Session ID: ${currentSessionId}\nLoại: ${currentSessionType}\nTriệu chứng đã báo cáo: ${reportedSymptoms.length}`);
         }
 
         // Auto-resize textarea on input

@@ -17,18 +17,18 @@
     "tiêu chảy"
   ],
   "disease_names": [
-    "Viêm họng cấp",
-    "Đau đầu căng thẳng",
-    "Viêm amidan",
-    "Hen suyễn cấp",
-    "Viêm dạ dày cấp",
-    "Đau nửa đầu",
+    "Cảm lạnh thông thường",
     "Cúm mùa",
+    "Viêm họng cấp",
+    "Đau nửa đầu",
+    "Viêm dạ dày cấp",
     "Nhồi máu cơ tim",
+    "Hen suyễn cấp",
     "Ngộ độc thực phẩm",
-    "Cảm lạnh thông thường"
+    "Đau đầu căng thẳng",
+    "Viêm amidan"
   ],
-  "final_accuracy": 0.0,
-  "training_samples": 8,
-  "test_samples": 2
+  "final_accuracy": 0.875,
+  "training_samples": 32,
+  "test_samples": 8
 }

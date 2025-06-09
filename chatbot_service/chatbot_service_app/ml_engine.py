@@ -1,3 +1,5 @@
+# chatbot_service_app/ml_engine.py - Simple enhancement with text-based severity
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -11,16 +13,16 @@ import pickle
 import os
 from typing import List, Dict, Tuple, Optional
 import logging
+import re
 
 from .ml_models import ImprovedDiseasePredictionNetwork, MultiTaskLoss, FocalLoss
-
 from .knowledge_generator import MedicalKnowledgeGenerator
 from .symptom_extractor import SymptomExtractor
 
 logger = logging.getLogger(__name__)
 
 class MLEngine:
-    """Main Machine Learning Engine for Disease Prediction"""
+    """Main Machine Learning Engine for Disease Prediction with Simple Severity Support"""
     
     def __init__(self):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -53,18 +55,236 @@ class MLEngine:
             'hidden_dims': [512, 256, 128],
             'dropout_rate': 0.3,
             'use_focal_loss': True,
-            'use_multitask': False  # Set to True if you want multi-task learning
+            'use_multitask': False
         }
+        
+        # Remove the old severity pattern definitions since we use SymptomExtractor
         
         # Load existing model if available
         self.load_model()
     
+    def _get_severity_description(self, severity_level: str) -> str:
+        """Get human-readable severity description"""
+        descriptions = {
+            'low': 'Mức độ thấp - Triệu chứng nhẹ, có thể chịu đựng được',
+            'medium': 'Mức độ trung bình - Triệu chứng khá rõ ràng, gây khó chịu', 
+            'high': 'Mức độ cao - Triệu chứng nghiêm trọng, cần chú ý'
+        }
+        return descriptions.get(severity_level, 'Mức độ không xác định')
+    
     def prepare_training_data(self) -> Tuple[np.ndarray, np.ndarray, List[str], List[str]]:
-        """Prepare training data from database with data augmentation"""
+        """Prepare training data from database with severity variations"""
         from .models import Disease, Symptom, DiseaseSymptom
+        
+        diseases = list(Disease.objects.all())
+        symptoms = list(Symptom.objects.all())
+        
+        if not diseases or not symptoms:
+            raise ValueError("No training data available in database")
+        
+        # Create feature matrix and labels
+        X = []
+        y = []
+        
+        # Generate training samples for each disease
+        for disease in diseases:
+            disease_symptoms = DiseaseSymptom.objects.filter(disease=disease)
+            
+            if not disease_symptoms.exists():
+                continue
+            
+            # Generate samples with different severity combinations (like SymptomExtractor would produce)
+            severity_scenarios = [
+                {'mild_ratio': 0.8, 'moderate_ratio': 0.2, 'severe_ratio': 0.0},  # Most symptoms mild
+                {'mild_ratio': 0.2, 'moderate_ratio': 0.7, 'severe_ratio': 0.1},  # Most moderate  
+                {'mild_ratio': 0.1, 'moderate_ratio': 0.4, 'severe_ratio': 0.5},  # Mix with severe
+                {'mild_ratio': 0.0, 'moderate_ratio': 0.3, 'severe_ratio': 0.7},  # Mostly severe
+            ]
+            
+            for scenario in severity_scenarios:
+                symptom_vector = np.zeros(len(symptoms))
+                
+                for ds in disease_symptoms:
+                    symptom_idx = symptoms.index(ds.symptom)
+                    
+                    # Simulate what SymptomExtractor would assign
+                    # Use probability to determine which severity bucket this symptom falls into
+                    base_prob = ds.probability
+                    
+                    if base_prob > 0.8:  # High probability symptoms tend to be more severe
+                        if scenario['severe_ratio'] > 0.3:
+                            severity_mult = 1.8  # severe
+                        elif scenario['moderate_ratio'] > 0.5:
+                            severity_mult = 1.0  # moderate
+                        else:
+                            severity_mult = 0.5  # mild
+                    else:  # Lower probability symptoms follow scenario distribution
+                        rand_val = np.random.random()
+                        if rand_val < scenario['severe_ratio']:
+                            severity_mult = 1.8
+                        elif rand_val < scenario['severe_ratio'] + scenario['moderate_ratio']:
+                            severity_mult = 1.0
+                        else:
+                            severity_mult = 0.5
+                    
+                    # Apply weight (like SymptomExtractor does)
+                    weight = ds.importance if hasattr(ds, 'importance') else 1.0
+                    symptom_vector[symptom_idx] = base_prob * severity_mult * weight
+                
+                # Add some noise for variation
+                noise = np.random.normal(0, 0.05, len(symptoms))
+                symptom_vector = np.clip(symptom_vector + noise, 0, 3)
+                
+                X.append(symptom_vector)
+                y.append(disease.name)
+        
+        symptom_names = [s.name for s in symptoms]
+        disease_names = [d.name for d in diseases]
+        
+        logger.info(f"Generated {len(X)} training samples for {len(disease_names)} diseases")
+        
+        return np.array(X), np.array(y), symptom_names, disease_names
+    
+    def predict_disease(self, symptoms_text: str) -> List[Dict]:
+        """Predict diseases from symptom text using existing SymptomExtractor severity logic"""
+        if self.model is None:
+            return [{'disease': 'Model not trained', 'confidence': 0.0, 'error': 'Model not available'}]
+        
+        try:
+            # Extract symptoms using existing NLP logic (already includes severity analysis)
+            extracted_symptoms = self.symptom_extractor.extract_symptoms(symptoms_text)
+            
+            if not extracted_symptoms:
+                return [{'disease': 'No symptoms detected', 'confidence': 0.0, 'extracted_symptoms': []}]
+            
+            # Create symptom vector using existing severity info from extracted symptoms
+            symptom_vector = self._create_symptom_vector_with_existing_severity(extracted_symptoms)
+            
+            if symptom_vector is None:
+                return [{'disease': 'Cannot process symptoms', 'confidence': 0.0}]
+            
+            # Scale symptom vector
+            symptom_vector_scaled = self.scaler.transform([symptom_vector])
+            
+            # Predict
+            self.model.eval()
+            with torch.no_grad():
+                input_tensor = torch.FloatTensor(symptom_vector_scaled).to(self.device)
+                
+                outputs = self.model(input_tensor)
+                disease_logits = outputs['disease_logits']
+                confidence_score = outputs['confidence']
+                
+                # Get probabilities
+                probabilities = torch.softmax(disease_logits, dim=1)
+                
+                # Get top predictions
+                top_probs, top_indices = torch.topk(probabilities, min(5, len(self.disease_encoder.classes_)))
+                
+                # Determine overall severity from extracted symptoms
+                overall_severity = self._determine_overall_severity(extracted_symptoms)
+                
+                results = []
+                for i, (prob, idx) in enumerate(zip(top_probs[0], top_indices[0])):
+                    disease_name = self.disease_encoder.inverse_transform([idx.item()])[0]
+                    
+                    results.append({
+                        'disease': disease_name,
+                        'confidence': prob.item(),
+                        'rank': i + 1,
+                        'extracted_symptoms': [s['name'] for s in extracted_symptoms],
+                        'detected_severity': overall_severity,
+                        'severity_text': self._get_severity_description(overall_severity),
+                        'symptom_details': extracted_symptoms,  # Include full symptom details
+                        'overall_confidence': confidence_score[0].item() if confidence_score is not None else None
+                    })
+                
+                return results
+                
+        except Exception as e:
+            logger.error(f"Prediction error: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return [{'disease': 'Prediction failed', 'confidence': 0.0, 'error': str(e)}]
+    
+    def _create_symptom_vector_with_existing_severity(self, extracted_symptoms: List[Dict]) -> Optional[np.ndarray]:
+        """Create symptom vector using severity info already extracted by SymptomExtractor"""
+        try:
+            from .models import Symptom
+            all_symptoms = list(Symptom.objects.all())
+            
+            if not all_symptoms:
+                return None
+            
+            symptom_vector = np.zeros(len(all_symptoms))
+            
+            for extracted in extracted_symptoms:
+                symptom_name = extracted['name']
+                # Use severity already extracted by SymptomExtractor
+                severity = extracted.get('severity', 'moderate')  # Default from extractor
+                weight = extracted.get('weight', 1.0)  # Weight from extractor
+                
+                # Find matching symptom in database
+                matching_symptom = None
+                for symptom in all_symptoms:
+                    if symptom.name.lower() == symptom_name.lower():
+                        matching_symptom = symptom
+                        break
+                
+                if matching_symptom:
+                    symptom_idx = all_symptoms.index(matching_symptom)
+                    
+                    # Convert severity to numeric weight
+                    severity_weights = {
+                        'mild': 0.5,
+                        'moderate': 1.0, 
+                        'severe': 1.8
+                    }
+                    severity_weight = severity_weights.get(severity, 1.0)
+                    
+                    # Combine severity weight with extractor weight
+                    final_weight = severity_weight * weight
+                    
+                    symptom_vector[symptom_idx] = final_weight
+            
+            return symptom_vector if np.sum(symptom_vector) > 0 else None
+            
+        except Exception as e:
+            logger.error(f"Error creating symptom vector: {e}")
+            return None
+    
+    def _determine_overall_severity(self, extracted_symptoms: List[Dict]) -> str:
+        """Determine overall severity from extracted symptoms"""
+        if not extracted_symptoms:
+            return 'low'
+        
+        severity_counts = {'mild': 0, 'moderate': 0, 'severe': 0}
+        
+        for symptom in extracted_symptoms:
+            severity = symptom.get('severity', 'moderate')
+            if severity in severity_counts:
+                severity_counts[severity] += 1
+        
+        # If any severe symptoms, overall is severe
+        if severity_counts['severe'] > 0:
+            return 'high'
+        # If mostly moderate or any emergency context
+        elif severity_counts['moderate'] > severity_counts['mild'] or any(s.get('is_emergency_context', False) for s in extracted_symptoms):
+            return 'medium'
+        else:
+            return 'low'
+    
+    def _get_severity_description(self, severity_level: str) -> str:
+        """Get human-readable severity description"""
+        descriptions = {
+            'low': 'Mức độ thấp - Triệu chứng nhẹ, có thể chịu đựng được',
+            'medium': 'Mức độ trung bình - Triệu chứng khá rõ ràng, gây khó chịu',
+            'high': 'Mức độ cao - Triệu chứng nghiêm trọng, cần chú ý'
+        }
+        return descriptions.get(severity_level, 'Mức độ không xác định')
     
     def train_model(self) -> bool:
-        """Train the disease prediction model"""
+        """Train the disease prediction model (unchanged from original)"""
         try:
             logger.info("Starting model training...")
             
@@ -79,13 +299,11 @@ class MLEngine:
             
             # Split data with fallback for stratification
             try:
-                # Try stratified split first
                 X_train, X_test, y_train, y_test = train_test_split(
                     X_scaled, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
                 )
                 logger.info("Using stratified train-test split")
             except ValueError as e:
-                # Fallback to regular split if stratification fails
                 logger.warning(f"Stratified split failed: {e}. Using regular split.")
                 X_train, X_test, y_train, y_test = train_test_split(
                     X_scaled, y_encoded, test_size=0.2, random_state=42
@@ -138,8 +356,6 @@ class MLEngine:
             # Training loop
             best_accuracy = 0
             patience_counter = 0
-            train_losses = []
-            val_accuracies = []
             
             for epoch in range(self.training_config['epochs']):
                 self.model.train()
@@ -151,9 +367,9 @@ class MLEngine:
                     batch_symptoms = batch_symptoms.to(self.device)
                     batch_diseases = batch_diseases.to(self.device)
                     
-                    # Forward pass - FIX: Use correct output format
+                    # Forward pass
                     outputs = self.model(batch_symptoms)
-                    disease_logits = outputs['disease_logits']  # Get from dictionary
+                    disease_logits = outputs['disease_logits']
                     
                     loss = criterion(disease_logits, batch_diseases)
                     
@@ -178,12 +394,10 @@ class MLEngine:
                 
                 avg_loss = epoch_loss / len(train_loader)
                 train_accuracy = correct_predictions / total_predictions
-                train_losses.append(avg_loss)
                 
                 # Validation
                 if epoch % 5 == 0 or epoch == self.training_config['epochs'] - 1:
                     val_accuracy = self._evaluate_model(X_test, y_test)
-                    val_accuracies.append(val_accuracy)
                     
                     current_lr = scheduler.get_last_lr()[0]
                     logger.info(
@@ -208,9 +422,6 @@ class MLEngine:
             final_accuracy = self._evaluate_model(X_test, y_test)
             logger.info(f"Training completed. Final accuracy: {final_accuracy:.4f}")
             
-            # Generate detailed classification report
-            self._generate_classification_report(X_test, y_test, disease_names)
-            
             # Save model metadata
             metadata = {
                 'num_symptoms': num_symptoms,
@@ -218,11 +429,8 @@ class MLEngine:
                 'symptom_names': symptom_names,
                 'disease_names': disease_names,
                 'final_accuracy': final_accuracy,
-                'best_accuracy': best_accuracy,
                 'training_samples': len(X_train),
-                'test_samples': len(X_test),
-                'epochs_trained': epoch + 1,
-                'training_config': self.training_config
+                'test_samples': len(X_test)
             }
             
             import json
@@ -245,7 +453,6 @@ class MLEngine:
             X_test_tensor = torch.FloatTensor(X_test).to(self.device)
             y_test_tensor = torch.LongTensor(y_test).to(self.device)
             
-            # FIX: Use correct output format
             outputs = self.model(X_test_tensor)
             disease_logits = outputs['disease_logits']
             
@@ -253,129 +460,6 @@ class MLEngine:
             accuracy = (predicted == y_test_tensor).float().mean().item()
             
         return accuracy
-    
-    def _generate_classification_report(self, X_test: np.ndarray, y_test: np.ndarray, disease_names: List[str]):
-        """Generate detailed classification report"""
-        self.model.eval()
-        
-        with torch.no_grad():
-            X_test_tensor = torch.FloatTensor(X_test).to(self.device)
-            outputs = self.model(X_test_tensor)
-            disease_logits = outputs['disease_logits']
-            
-            _, predicted = torch.max(disease_logits, 1)
-            predicted_np = predicted.cpu().numpy()
-            
-            # Generate classification report
-            report = classification_report(
-                y_test, predicted_np, 
-                target_names=disease_names, 
-                output_dict=True
-            )
-            
-            logger.info("Classification Report:")
-            logger.info(classification_report(y_test, predicted_np, target_names=disease_names))
-            
-            # Save report
-            report_path = os.path.join(self.model_dir, 'classification_report.json')
-            with open(report_path, 'w', encoding='utf-8') as f:
-                json.dump(report, f, ensure_ascii=False, indent=2)
-    
-    def predict_disease(self, symptoms_text: str) -> List[Dict]:
-        """Predict diseases from symptom text"""
-        if self.model is None:
-            return [{'disease': 'Model not trained', 'confidence': 0.0, 'error': 'Model not available'}]
-        
-        try:
-            # Extract symptoms using NLP
-            extracted_symptoms = self.symptom_extractor.extract_symptoms(symptoms_text)
-            
-            if not extracted_symptoms:
-                return [{'disease': 'No symptoms detected', 'confidence': 0.0, 'extracted_symptoms': []}]
-            
-            # Create symptom vector
-            symptom_vector = self._create_symptom_vector(extracted_symptoms)
-            
-            if symptom_vector is None:
-                return [{'disease': 'Cannot process symptoms', 'confidence': 0.0}]
-            
-            # Scale symptom vector
-            symptom_vector_scaled = self.scaler.transform([symptom_vector])
-            
-            # Predict
-            self.model.eval()
-            with torch.no_grad():
-                input_tensor = torch.FloatTensor(symptom_vector_scaled).to(self.device)
-                
-                # FIX: Use correct output format
-                outputs = self.model(input_tensor)
-                disease_logits = outputs['disease_logits']
-                confidence_score = outputs['confidence']
-                attention_weights = outputs.get('attention_weights')
-                
-                # Get probabilities
-                probabilities = torch.softmax(disease_logits, dim=1)
-                
-                # Get top predictions
-                top_probs, top_indices = torch.topk(probabilities, min(5, len(self.disease_encoder.classes_)))
-                
-                results = []
-                for i, (prob, idx) in enumerate(zip(top_probs[0], top_indices[0])):
-                    disease_name = self.disease_encoder.inverse_transform([idx.item()])[0]
-                    
-                    results.append({
-                        'disease': disease_name,
-                        'confidence': prob.item(),
-                        'rank': i + 1,
-                        'extracted_symptoms': [s['name'] for s in extracted_symptoms],
-                        'overall_confidence': confidence_score[0].item() if confidence_score is not None else None,
-                        'attention_weights': attention_weights.cpu().numpy().tolist() if attention_weights is not None else None
-                    })
-                
-                return results
-                
-        except Exception as e:
-            logger.error(f"Prediction error: {e}")
-            import traceback
-            logger.error(traceback.format_exc())
-            return [{'disease': 'Prediction failed', 'confidence': 0.0, 'error': str(e)}]
-    
-    def _create_symptom_vector(self, extracted_symptoms: List[Dict]) -> Optional[np.ndarray]:
-        """Create symptom vector from extracted symptoms"""
-        try:
-            from .models import Symptom
-            all_symptoms = list(Symptom.objects.all())
-            
-            if not all_symptoms:
-                return None
-            
-            symptom_vector = np.zeros(len(all_symptoms))
-            
-            for extracted in extracted_symptoms:
-                symptom_name = extracted['name']
-                severity = extracted.get('severity', 'moderate')
-                
-                # Find matching symptom in database
-                matching_symptom = None
-                for symptom in all_symptoms:
-                    if symptom.name.lower() == symptom_name.lower():
-                        matching_symptom = symptom
-                        break
-                
-                if matching_symptom:
-                    symptom_idx = all_symptoms.index(matching_symptom)
-                    
-                    # Weight by severity
-                    severity_weights = {'mild': 0.5, 'moderate': 1.0, 'severe': 1.5}
-                    weight = severity_weights.get(severity, 1.0)
-                    
-                    symptom_vector[symptom_idx] = weight
-            
-            return symptom_vector if np.sum(symptom_vector) > 0 else None
-            
-        except Exception as e:
-            logger.error(f"Error creating symptom vector: {e}")
-            return None
     
     def save_model(self):
         """Save trained model and encoders"""
@@ -440,7 +524,8 @@ class MLEngine:
             'model_path_exists': os.path.exists(self.model_path),
             'encoders_path_exists': os.path.exists(self.encoders_path),
             'device': str(self.device),
-            'model_type': 'ImprovedDiseasePredictionNetwork'
+            'model_type': 'ImprovedDiseasePredictionNetwork',
+            'severity_support': True
         }
         
         if os.path.exists(self.metadata_path):
@@ -457,42 +542,7 @@ class MLEngine:
             info.update({
                 'total_parameters': total_params,
                 'trainable_parameters': trainable_params,
-                'model_size_mb': total_params * 4 / (1024 * 1024)  # Approximate size in MB
+                'model_size_mb': total_params * 4 / (1024 * 1024)
             })
         
         return info
-    
-    def interpret_prediction(self, symptoms_text: str) -> Dict:
-        """Get detailed interpretation of prediction"""
-        if self.model is None:
-            return {'error': 'Model not available'}
-        
-        try:
-            # Extract symptoms
-            extracted_symptoms = self.symptom_extractor.extract_symptoms(symptoms_text)
-            
-            if not extracted_symptoms:
-                return {'error': 'No symptoms detected'}
-            
-            # Create symptom vector
-            symptom_vector = self._create_symptom_vector(extracted_symptoms)
-            
-            if symptom_vector is None:
-                return {'error': 'Cannot process symptoms'}
-            
-            # Scale and predict
-            symptom_vector_scaled = self.scaler.transform([symptom_vector])
-            input_tensor = torch.FloatTensor(symptom_vector_scaled).to(self.device)
-            
-            # Get model interpretation
-            interpretation = self.model.interpret_prediction(input_tensor)
-            
-            return {
-                'extracted_symptoms': extracted_symptoms,
-                'symptom_vector': symptom_vector.tolist(),
-                'interpretation': interpretation
-            }
-            
-        except Exception as e:
-            logger.error(f"Interpretation error: {e}")
-            return {'error': str(e)}

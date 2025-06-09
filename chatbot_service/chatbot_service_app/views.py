@@ -1,3 +1,4 @@
+# chatbot_service_app/views.py - Simple enhancement keeping existing UI
 
 from .data_loader import MedicalDataLoader
 from .ml_engine import MLEngine
@@ -15,14 +16,14 @@ ml_engine = MLEngine()
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def predict_disease(request):
-    """Main API endpoint for disease prediction"""
+    """Main API endpoint for disease prediction with automatic severity detection"""
     symptoms_text = request.data.get('symptoms', '').strip()
     
     if not symptoms_text:
         return Response({'error': 'Symptoms text is required'}, status=400)
     
     try:
-        # Get predictions
+        # Get predictions with automatic severity detection
         predictions = ml_engine.predict_disease(symptoms_text)
         
         # Format response
@@ -38,6 +39,13 @@ def predict_disease(request):
             if predictions[0].get('extracted_symptoms'):
                 response_text += f"\n**Triệu chứng đã nhận diện:** {', '.join(predictions[0]['extracted_symptoms'])}\n"
             
+            # Add severity analysis
+            detected_severity = predictions[0].get('detected_severity', 'low')
+            severity_text = predictions[0].get('severity_text', '')
+            
+            if detected_severity != 'low':  # Only show if not default
+                response_text += f"\n**📊 Mức độ nghiêm trọng:** {severity_text}\n"
+            
             # Add recommendations for top prediction
             top_disease = predictions[0]['disease']
             try:
@@ -45,13 +53,26 @@ def predict_disease(request):
                 disease_obj = Disease.objects.get(name=top_disease)
                 response_text += f"\n**💡 Khuyến nghị:** {disease_obj.recommendations}\n"
                 
+                # Adjust recommendations based on detected severity
+                if detected_severity == 'high':
+                    response_text += "\n🚨 **Do mức độ nghiêm trọng cao, khuyến nghị khám bác sĩ ngay!**"
+                elif detected_severity == 'medium':
+                    response_text += "\n⚠️ **Nên đặt lịch khám trong 1-2 ngày tới**"
+                
                 if disease_obj.severity_level == 'emergency':
                     response_text += "\n🚨 **CẢNH BÁO:** Cần chăm sóc y tế khẩn cấp!"
                     
             except Disease.DoesNotExist:
                 pass
             
-            urgency_level = 'emergency' if any(p.get('confidence', 0) > 0.8 and 'tim' in p.get('disease', '').lower() for p in predictions) else 'normal'
+            # Determine urgency level considering severity
+            urgency_level = 'normal'
+            if detected_severity == 'high':
+                urgency_level = 'high'
+            elif detected_severity == 'medium':
+                urgency_level = 'medium'
+            elif any(p.get('confidence', 0) > 0.8 and 'tim' in p.get('disease', '').lower() for p in predictions):
+                urgency_level = 'emergency'
             
         else:
             response_text = "Không thể xác định bệnh cụ thể từ triệu chứng đã mô tả.\nKhuyến nghị tham khảo ý kiến bác sĩ chuyên khoa."
@@ -63,6 +84,7 @@ def predict_disease(request):
             'message': response_text,
             'predictions': predictions,
             'extracted_symptoms': predictions[0].get('extracted_symptoms', []) if predictions else [],
+            'detected_severity': predictions[0].get('detected_severity', 'low') if predictions else 'low',
             'urgency_level': urgency_level,
             'confidence_level': 'high' if predictions and predictions[0].get('confidence', 0) > 0.7 else 'medium' if predictions and predictions[0].get('confidence', 0) > 0.4 else 'low'
         })
@@ -80,7 +102,7 @@ def setup_system(request):
         results = MedicalDataLoader.create_medical_data(ml_engine)
         
         return Response({
-            'message': 'System setup completed',
+            'message': 'System setup completed with severity support',
             'created_data': results,
             'next_step': 'Train the model using /train-model/ endpoint'
         })
@@ -121,7 +143,7 @@ def train_model(request):
         
         if success:
             return Response({
-                'message': 'Model training completed successfully',
+                'message': 'Model training completed successfully with severity support',
                 'model_info': ml_engine.get_model_info()
             })
         else:
@@ -150,7 +172,8 @@ def get_model_status(request):
         return Response({
             'model_info': model_info,
             'system_stats': system_stats,
-            'ready_for_prediction': model_info['model_loaded'] and system_stats['diseases_count'] > 0
+            'ready_for_prediction': model_info['model_loaded'] and system_stats['diseases_count'] > 0,
+            'features': ['Disease prediction', 'Automatic severity detection from text']
         })
         
     except Exception as e:
@@ -169,28 +192,21 @@ def extract_symptoms_only(request):
     try:
         extracted = ml_engine.symptom_extractor.extract_symptoms(text)
         
+        # Also get severity analysis from the extracted symptoms
+        overall_severity = 'low'
+        severity_details = []
+        
+        if extracted:
+            # Use ML engine's existing severity analysis
+            overall_severity = ml_engine._determine_overall_severity(extracted)
+            severity_details = [(s['name'], s.get('severity', 'moderate')) for s in extracted]
+        
         return Response({
             'extracted_symptoms': extracted,
-            'total_found': len(extracted)
+            'total_found': len(extracted),
+            'overall_severity': overall_severity,
+            'severity_details': severity_details
         })
-        
     except Exception as e:
         logger.error(f"Symptom extraction error: {e}")
-        return Response({'error': f'Extraction failed: {str(e)}'}, status=500)
-
-# urls.py
-from django.urls import path
-from . import views
-
-urlpatterns = [
-    # Core prediction
-    path('api/predict/', views.predict_disease, name='predict-disease'),
-    
-    # System management
-    path('api/setup/', views.setup_system, name='setup-system'),
-    path('api/train/', views.train_model, name='train-model'),
-    path('api/status/', views.get_model_status, name='model-status'),
-    
-    # Utilities
-    path('api/extract-symptoms/', views.extract_symptoms_only, name='extract-symptoms'),
-]
+        return Response({'error': f'Symptom extraction failed: {str(e)}'}, status=500)

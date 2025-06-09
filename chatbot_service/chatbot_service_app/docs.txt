@@ -1,0 +1,11 @@
+# Validate patterns
+python manage.py manage_symptom_patterns --action validate
+
+# Show statistics  
+python manage.py manage_symptom_patterns --action stats
+
+# Reload from file
+python manage.py manage_symptom_patterns --action reload
+
+# Create default file
+python manage.py manage_symptom_patterns --action create-default

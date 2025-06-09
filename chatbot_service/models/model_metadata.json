@@ -17,16 +17,16 @@
     "tiêu chảy"
   ],
   "disease_names": [
-    "Viêm dạ dày cấp",
-    "Nhồi máu cơ tim",
-    "Cúm mùa",
-    "Ngộ độc thực phẩm",
-    "Đau đầu căng thẳng",
-    "Cảm lạnh thông thường",
-    "Hen suyễn cấp",
     "Viêm họng cấp",
+    "Đau đầu căng thẳng",
+    "Viêm amidan",
+    "Hen suyễn cấp",
+    "Viêm dạ dày cấp",
     "Đau nửa đầu",
-    "Viêm amidan"
+    "Cúm mùa",
+    "Nhồi máu cơ tim",
+    "Ngộ độc thực phẩm",
+    "Cảm lạnh thông thường"
   ],
   "final_accuracy": 0.0,
   "training_samples": 8,

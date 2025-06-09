@@ -1,0 +1,674 @@
+{
+  "version": "1.0",
+  "language": "vi",
+  "last_updated": "2025-06-10",
+  "symptom_patterns": {
+    "đau_đầu": {
+      "patterns": [
+        "đau đầu",
+        "nhức đầu",
+        "đau nửa đầu",
+        "migraine",
+        "đầu đau",
+        "cứng đầu",
+        "căng thẳng đầu",
+        "đập thái dương",
+        "ấn đầu",
+        "như búa đập"
+      ],
+      "category": "neurological",
+      "severity_indicators": {
+        "severe": [
+          "dữ dội",
+          "khủng khiếp",
+          "không chịu nổi",
+          "như búa đập",
+          "muốn nổ tung",
+          "cực kỳ đau",
+          "đau kinh khủng",
+          "đau như điên"
+        ],
+        "mild": [
+          "nhẹ",
+          "chút ít",
+          "hơi đau",
+          "ít đau"
+        ]
+      },
+      "duration_keywords": [
+        "từ sáng",
+        "cả ngày",
+        "liên tục",
+        "thỉnh thoảng",
+        "khi nào"
+      ],
+      "is_critical": false,
+      "weight": 1.0
+    },
+    "sốt": {
+      "patterns": [
+        "sốt",
+        "nóng người",
+        "ấm người",
+        "nhiệt độ cao",
+        "bị nóng",
+        "run sốt",
+        "lạnh run",
+        "ớn lạnh",
+        "nóng lạnh",
+        "sốt rét"
+      ],
+      "category": "general",
+      "severity_indicators": {
+        "severe": [
+          "sốt cao",
+          "sốt nhiều",
+          "trên 39",
+          "trên 40",
+          "sốt liên tục",
+          "sốt không hạ",
+          "39 độ",
+          "40 độ"
+        ],
+        "mild": [
+          "sốt nhẹ",
+          "hơi nóng",
+          "ấm ấm"
+        ]
+      },
+      "duration_keywords": [
+        "cả ngày",
+        "từ tối qua",
+        "mấy ngày nay"
+      ],
+      "is_critical": false,
+      "weight": 1.2
+    },
+    "ho": {
+      "patterns": [
+        "ho",
+        "ke",
+        "ho khan",
+        "ho có đờm",
+        "ho ra máu",
+        "bị ho",
+        "cơn ho",
+        "ho sặc",
+        "ho liên tục",
+        "ho đêm"
+      ],
+      "category": "respiratory",
+      "severity_indicators": {
+        "severe": [
+          "ho nhiều",
+          "ho liên tục",
+          "ho ra máu",
+          "ho sặc",
+          "ho không ngừng",
+          "ho khạc máu",
+          "ho có máu"
+        ],
+        "mild": [
+          "ho ít",
+          "ho nhẹ",
+          "thỉnh thoảng ho"
+        ]
+      },
+      "duration_keywords": [
+        "cả đêm",
+        "liên tục",
+        "từ sáng"
+      ],
+      "is_critical": false,
+      "weight": 0.8
+    },
+    "buồn_nôn": {
+      "patterns": [
+        "buồn nôn",
+        "nôn",
+        "muốn nôn",
+        "ói",
+        "cảm giác nôn",
+        "ợt",
+        "nôn mửa",
+        "có cảm giác nôn",
+        "khó chịu muốn nôn",
+        "ọe"
+      ],
+      "category": "gastrointestinal",
+      "severity_indicators": {
+        "severe": [
+          "nôn nhiều",
+          "nôn liên tục",
+          "nôn không ngừng",
+          "nôn ra máu",
+          "mửa dữ dội"
+        ],
+        "mild": [
+          "hơi buồn nôn",
+          "cảm giác muốn nôn"
+        ]
+      },
+      "duration_keywords": [
+        "từ sáng",
+        "cả ngày",
+        "liên tục"
+      ],
+      "is_critical": false,
+      "weight": 1.0
+    },
+    "đau_bụng": {
+      "patterns": [
+        "đau bụng",
+        "đau dạ dày",
+        "quặn bụng",
+        "cứng bụng",
+        "bụng đau",
+        "đau ruột",
+        "đau thượng vị",
+        "đau hạ vị",
+        "đau bên hông",
+        "cơn đau bụng"
+      ],
+      "category": "gastrointestinal",
+      "severity_indicators": {
+        "severe": [
+          "đau dữ dội",
+          "quặn thắt",
+          "không chịu nổi",
+          "đau như dao cắt",
+          "đau kinh khủng",
+          "co thắt",
+          "cứng như ván"
+        ],
+        "mild": [
+          "hơi đau",
+          "đau nhẹ",
+          "khó chịu"
+        ]
+      },
+      "duration_keywords": [
+        "từ tối qua",
+        "cả ngày",
+        "liên tục",
+        "từng cơn"
+      ],
+      "is_critical": false,
+      "weight": 1.1
+    },
+    "khó_thở": {
+      "patterns": [
+        "khó thở",
+        "thở khó",
+        "ngạt thở",
+        "hụt hơi",
+        "thở gấp",
+        "thiếu không khí",
+        "nghẹt thở",
+        "không thở được",
+        "thở dốc",
+        "thở nhanh"
+      ],
+      "category": "respiratory",
+      "severity_indicators": {
+        "severe": [
+          "rất khó thở",
+          "không thở được",
+          "ngạt",
+          "nghẹt thở",
+          "thở rất khó",
+          "gần như ngạt"
+        ],
+        "mild": [
+          "hơi khó thở",
+          "thở hơi nhanh"
+        ]
+      },
+      "duration_keywords": [
+        "khi vận động",
+        "lúc nghỉ ngơi",
+        "cả ngày"
+      ],
+      "is_critical": true,
+      "weight": 1.8
+    },
+    "chóng_mặt": {
+      "patterns": [
+        "chóng mặt",
+        "hoa mắt",
+        "choáng váng",
+        "lảo đảo",
+        "mất thăng bằng",
+        "quay cuồng",
+        "như say",
+        "đầu quay",
+        "váng đầu",
+        "đứng không vững"
+      ],
+      "category": "neurological",
+      "severity_indicators": {
+        "severe": [
+          "chóng mặt dữ dội",
+          "ngất xỉu",
+          "mất ý thức",
+          "đổ gục"
+        ],
+        "mild": [
+          "hơi chóng mặt",
+          "chút ít hoa mắt"
+        ]
+      },
+      "duration_keywords": [
+        "khi đứng dậy",
+        "liên tục",
+        "thỉnh thoảng"
+      ],
+      "is_critical": false,
+      "weight": 0.9
+    },
+    "mệt_mỏi": {
+      "patterns": [
+        "mệt mỏi",
+        "mệt",
+        "uể oải",
+        "kiệt sức",
+        "không có sức",
+        "mệt lử",
+        "yếu ớt",
+        "mệt nhoài",
+        "kiệt quệ",
+        "rã rời"
+      ],
+      "category": "general",
+      "severity_indicators": {
+        "severe": [
+          "rất mệt",
+          "kiệt sức",
+          "mệt nhoài",
+          "không đứng nổi"
+        ],
+        "mild": [
+          "hơi mệt",
+          "mệt nhẹ"
+        ]
+      },
+      "duration_keywords": [
+        "cả ngày",
+        "từ sáng",
+        "liên tục"
+      ],
+      "is_critical": false,
+      "weight": 0.7
+    },
+    "đau_ngực": {
+      "patterns": [
+        "đau ngực",
+        "tức ngực",
+        "ngực đau",
+        "đau tim",
+        "đau lồng ngực",
+        "nghẹt ngực",
+        "nặng ngực",
+        "âm ỉ ngực",
+        "bí ngực",
+        "căng ngực"
+      ],
+      "category": "cardiovascular",
+      "severity_indicators": {
+        "severe": [
+          "đau ngực dữ dội",
+          "đau như đâm",
+          "rất đau",
+          "đau kinh khủng",
+          "nghẹt thở",
+          "đau lan ra tay"
+        ],
+        "mild": [
+          "hơi đau ngực",
+          "khó chịu ngực"
+        ]
+      },
+      "duration_keywords": [
+        "đột ngột",
+        "liên tục",
+        "từng cơn"
+      ],
+      "is_critical": true,
+      "weight": 2.0
+    },
+    "tiêu_chảy": {
+      "patterns": [
+        "tiêu chảy",
+        "đi lỏng",
+        "đi ngoài nhiều",
+        "lỏng bụng",
+        "rối loạn tiêu hóa",
+        "phân lỏng",
+        "đi nước",
+        "đi phân nhiều",
+        "tiêu lỏng",
+        "bụng xôi"
+      ],
+      "category": "gastrointestinal",
+      "severity_indicators": {
+        "severe": [
+          "tiêu chảy nhiều",
+          "đi lỏng liên tục",
+          "mất nước",
+          "có máu",
+          "ra máu"
+        ],
+        "mild": [
+          "hơi lỏng",
+          "đi ngoài ít"
+        ]
+      },
+      "duration_keywords": [
+        "từ tối qua",
+        "cả ngày",
+        "liên tục"
+      ],
+      "is_critical": false,
+      "weight": 1.0
+    },
+    "đau_họng": {
+      "patterns": [
+        "đau họng",
+        "rát họng",
+        "khàn giọng",
+        "nuốt đau",
+        "họng đau",
+        "cổ họng đau",
+        "nuốt khó",
+        "họng khô",
+        "ngứa họng",
+        "sưng họng"
+      ],
+      "category": "respiratory",
+      "severity_indicators": {
+        "severe": [
+          "đau họng dữ dội",
+          "không nuốt được",
+          "nuốt rất đau",
+          "sưng to"
+        ],
+        "mild": [
+          "hơi đau họng",
+          "ngứa ngứa họng"
+        ]
+      },
+      "duration_keywords": [
+        "từ sáng",
+        "mấy ngày nay",
+        "liên tục"
+      ],
+      "is_critical": false,
+      "weight": 0.8
+    },
+    "chảy_nước_mũi": {
+      "patterns": [
+        "chảy nước mũi",
+        "sổ mũi",
+        "nghẹt mũi",
+        "tắc mũi",
+        "mũi chảy",
+        "mũi bị nghẹt",
+        "khó thở qua mũi",
+        "mũi đầy",
+        "mũi chặn",
+        "nước mũi"
+      ],
+      "category": "respiratory",
+      "severity_indicators": {
+        "severe": [
+          "chảy nhiều",
+          "nghẹt hoàn toàn",
+          "không thở được qua mũi"
+        ],
+        "mild": [
+          "hơi chảy",
+          "nghẹt nhẹ"
+        ]
+      },
+      "duration_keywords": [
+        "từ sáng",
+        "cả ngày",
+        "mấy ngày nay"
+      ],
+      "is_critical": false,
+      "weight": 0.6
+    },
+    "đau_khớp": {
+      "patterns": [
+        "đau khớp",
+        "nhức khớp",
+        "cứng khớp",
+        "sưng khớp",
+        "khớp đau",
+        "đau cơ",
+        "nhức mỏi",
+        "đau xương",
+        "cứng cơ",
+        "đau cột sống"
+      ],
+      "category": "musculoskeletal",
+      "severity_indicators": {
+        "severe": [
+          "đau khớp dữ dội",
+          "không cử động được",
+          "sưng to",
+          "cứng hoàn toàn"
+        ],
+        "mild": [
+          "hơi đau khớp",
+          "nhức nhẹ"
+        ]
+      },
+      "duration_keywords": [
+        "khi vận động",
+        "buổi sáng",
+        "cả ngày"
+      ],
+      "is_critical": false,
+      "weight": 0.8
+    },
+    "phát_ban": {
+      "patterns": [
+        "phát ban",
+        "nổi mề đay",
+        "ngứa",
+        "da đỏ",
+        "ban đỏ",
+        "nổi đốm",
+        "da sưng",
+        "mẩn ngứa",
+        "nổi mụn",
+        "da viêm"
+      ],
+      "category": "dermatological",
+      "severity_indicators": {
+        "severe": [
+          "ban rộng",
+          "ngứa dữ dội",
+          "sưng to",
+          "lan ra nhiều"
+        ],
+        "mild": [
+          "ít ban",
+          "ngứa nhẹ"
+        ]
+      },
+      "duration_keywords": [
+        "từ tối qua",
+        "đột ngột",
+        "lan dần"
+      ],
+      "is_critical": false,
+      "weight": 0.7
+    },
+    "mất_ngủ": {
+      "patterns": [
+        "mất ngủ",
+        "không ngủ được",
+        "khó ngủ",
+        "thức khuya",
+        "ngủ không sâu",
+        "tỉnh giấc",
+        "ngủ không ngon",
+        "mơ nhiều",
+        "ngủ gà ngủ gật",
+        "trằn trọc"
+      ],
+      "category": "neurological",
+      "severity_indicators": {
+        "severe": [
+          "hoàn toàn không ngủ được",
+          "thức cả đêm",
+          "mấy ngày không ngủ"
+        ],
+        "mild": [
+          "hơi khó ngủ",
+          "ngủ không sâu"
+        ]
+      },
+      "duration_keywords": [
+        "mấy đêm nay",
+        "cả tuần",
+        "liên tục"
+      ],
+      "is_critical": false,
+      "weight": 0.6
+    },
+    "đau_răng": {
+      "patterns": [
+        "đau răng",
+        "nhức răng",
+        "răng đau",
+        "sâu răng",
+        "viêm nướu",
+        "sưng nướu",
+        "đau quai hàm",
+        "răng lung lay",
+        "chảy máu nướu",
+        "ê buốt răng"
+      ],
+      "category": "dental",
+      "severity_indicators": {
+        "severe": [
+          "đau răng dữ dội",
+          "không chịu nổi",
+          "sưng má",
+          "đau lan lên đầu"
+        ],
+        "mild": [
+          "hơi nhức răng",
+          "ê buốt nhẹ"
+        ]
+      },
+      "duration_keywords": [
+        "từ tối qua",
+        "khi ăn",
+        "liên tục"
+      ],
+      "is_critical": false,
+      "weight": 0.9
+    },
+    "chảy_máu_cam": {
+      "patterns": [
+        "chảy máu cam",
+        "máu cam",
+        "chảy máu mũi",
+        "mũi chảy máu",
+        "xuất huyết mũi",
+        "ra máu mũi",
+        "chảy máu từ mũi"
+      ],
+      "category": "general",
+      "severity_indicators": {
+        "severe": [
+          "chảy máu nhiều",
+          "không cầm được",
+          "liên tục chảy",
+          "máu chảy ròng ròng"
+        ],
+        "mild": [
+          "chảy ít máu",
+          "chảy một chút"
+        ]
+      },
+      "duration_keywords": [
+        "đột ngột",
+        "từ sáng",
+        "thỉnh thoảng"
+      ],
+      "is_critical": false,
+      "weight": 1.0
+    },
+    "đau_tai": {
+      "patterns": [
+        "đau tai",
+        "tai đau",
+        "nhức tai",
+        "ù tai",
+        "viêm tai",
+        "đau trong tai",
+        "tai bị tắc",
+        "nghe kém",
+        "ấm ẩm tai",
+        "chảy dịch tai"
+      ],
+      "category": "ent",
+      "severity_indicators": {
+        "severe": [
+          "đau tai dữ dội",
+          "chảy mủ",
+          "sưng to",
+          "nghe không được"
+        ],
+        "mild": [
+          "hơi đau tai",
+          "nhức nhẹ"
+        ]
+      },
+      "duration_keywords": [
+        "từ tối qua",
+        "mấy ngày nay",
+        "liên tục"
+      ],
+      "is_critical": false,
+      "weight": 0.8
+    }
+  },
+  "severity_modifiers": {
+    "mild": ["nhẹ", "chút ít", "hơi", "ít", "không nhiều", "1", "2", "3"],
+    "moderate": ["vừa", "trung bình", "khá", "tương đối", "4", "5", "6", "7"],
+    "severe": ["nặng", "nhiều", "dữ dội", "khủng khiếp", "không chịu nổi", "8", "9", "10", "kinh khủng", "cực kỳ"]
+  },
+  "duration_modifiers": {
+    "hours": ["giờ", "tiếng", "từ sáng", "từ chiều", "từ tối", "hôm nay"],
+    "days": ["ngày", "hôm qua", "tuần này", "mấy ngày", "vài ngày"],
+    "weeks": ["tuần", "mấy tuần", "tuần trước", "từ tuần trước"],
+    "months": ["tháng", "mấy tháng", "tháng trước", "lâu rồi", "từ lâu"]
+  },
+  "negation_keywords": [
+    "không",
+    "chưa",
+    "chẳng",
+    "không có",
+    "không bị",
+    "không cảm thấy",
+    "không thấy"
+  ],
+  "emergency_keywords": [
+    "cấp cứu",
+    "khẩn cấp",
+    "nguy hiểm",
+    "gọi 115",
+    "bệnh viện",
+    "ngất xỉu",
+    "bất tỉnh",
+    "co giật",
+    "khó thở nặng",
+    "đau ngực dữ dội"
+  ]
+}
